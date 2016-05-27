@@ -15,6 +15,9 @@ const APIAI_ACCESS_TOKEN = process.env.APIAI_ACCESS_TOKEN;
 const APIAI_LANG = process.env.APIAI_LANG;
 const SPARK_TOKEN = process.env.SPARK_TOKEN;
 
+// this value used by 'ciscospark' library
+process.env.CISCOSPARK_ACCESS_TOKEN = SPARK_TOKEN;
+
 var baseUrl = "";
 if (APP_NAME) {
     // Heroku case
@@ -39,7 +42,7 @@ bot.start(() => {
         console.log("Bot started");
     },
     (errStatus) => {
-        console.error('It seems the SPARK_TOKEN is wrong! Please fix it.')
+        console.error("Can't create webhook");
     });
 
 
