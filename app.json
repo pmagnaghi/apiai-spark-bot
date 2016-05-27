@@ -1,16 +1,16 @@
 {
-  "name": "API.AI Telegram integration",
-  "description": "Api.ai Telegram integration allows you to create Telegram bots with natural language understanding based on Api.ai technology.",
-  "repository": "https://github.com/api-ai/apiai-telegram-bot",
+  "name": "API.AI Spark integration",
+  "description": "Api.ai Spark integration allows you to create Spark bots with natural language understanding based on Api.ai technology.",
+  "repository": "https://github.com/api-ai/apiai-spark-bot",
   "logo": "http://xvir.github.io/img/apiai.png",
-  "keywords": ["api.ai", "telegram", "natural language"],
+  "keywords": ["api.ai", "spark", "natural language"],
   "env": {
     "APP_NAME": {
       "description": "Copy App Name here",
       "value": ""
     },
-    "TELEGRAM_TOKEN": {
-      "description": "Telegram bot token",
+    "SPARK_TOKEN": {
+      "description": "Spark bot token",
       "value": ""
     },
     "APIAI_ACCESS_TOKEN": {
