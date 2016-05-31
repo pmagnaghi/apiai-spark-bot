@@ -19,6 +19,8 @@ const APIAI_LANG = process.env.APIAI_LANG;
 const SPARK_CLIENT_ID = process.env.SPARK_CLIENT_ID;
 const SPARK_CLIENT_SECRET = process.env.SPARK_CLIENT_SECRET;
 
+request.debug = true;
+
 var baseUrl = "";
 if (APP_NAME) {
     // Heroku case
