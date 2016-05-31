@@ -114,6 +114,10 @@ app.get('/success', (req, res) => {
     res.sendFile('html/success.html', {root: __dirname});
 });
 
+app.get('/sample', (req, res) => {
+    res.sendFile('html/sample.html', {root: __dirname});
+});
+
 app.listen(REST_PORT, () => {
     console.log('Rest service ready on port ' + REST_PORT);
 });
