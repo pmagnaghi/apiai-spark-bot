@@ -44,12 +44,8 @@ function startBot(accessToken) {
     botConfig.devConfig = DEV_CONFIG;
 
     const bot = new SparkBot(botConfig, baseUrl);
-    // bot.start(() => {
-    //         console.log("Bot started");
-    //     },
-    //     (errStatus) => {
-    //         console.error("Can't create webhook:", errStatus);
-    //     });
+    
+    bot.createRoom("Test Room");
 }
 
 const app = express();

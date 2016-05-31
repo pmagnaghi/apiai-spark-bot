@@ -44,9 +44,39 @@ module.exports = class SparkBot {
         console.log('Starting bot on ' + this._webhookUrl);
     }
 
-    start(responseCallback, errCallback) {
-        console.log("Trying start bot");
+    createRoom(roomName) {
+        console.log("Trying to create room");
 
+        request.post("https://api.ciscospark.com/v1/rooms",
+            {
+                auth: {
+                    bearer: this._botConfig.sparkToken
+                },
+                json: {
+                    title: roomName
+                }
+            }, (err, resp) => {
+                if (err) {
+                    console.error("Error while creating room", err);
+                    return;
+                }
+
+                if (resp.statusCode > 200) {
+                    let message = resp.statusMessage;
+                    if (resp.body.message) {
+                        message += ", " + resp.body.message;
+                    }
+                    console.error("Error response from rooms API:", message);
+                } else {
+                    console.log("Response", resp.body);
+                    let roomId = resp.body.id;
+
+                    this.setupWebhookForRoom(roomId)
+                }
+            });
+    }
+
+    setupWebhookForRoom(roomId, okCallback, errCallback) {
         request.post("https://api.ciscospark.com/v1/webhooks",
             {
                 auth: {
@@ -57,27 +87,37 @@ module.exports = class SparkBot {
                     name: "Test",
                     resource: "messages",
                     targetUrl: this._webhookUrl,
-                    filter: 'roomId=Y2lzY29zcGFyazovL3VzL1JPT00vYmJjZWIxYWQtNDNmMS0zYjU4LTkxNDctZjE0YmIwYzRkMTU0'
+                    filter: 'roomId=' + roomId
                 }
             }, (err, resp, body) => {
                 if (err) {
-                    console.error("Bot start error", err);
-                    errCallback("Bot start error");
+                    console.error("Error while setup webhook", err);
+                    if (errCallback) {
+                        errCallback("Error while setup webhook");
+                    }
+                    return;
                 }
-                else if (resp.statusCode > 200) {
+
+                if (resp.statusCode > 200) {
                     let message = resp.statusMessage;
                     if (resp.body.message) {
                         message += ", " + resp.body.message;
                     }
-                    errCallback(message);
+                    console.error("Error while setup webhook", message);
+                    
+                    if (errCallback) {
+                        errCallback(message);
+                    }
+                    return;
                 }
-                else {
-                    console.log("Start result", resp.body);
-                    responseCallback();
+                
+                console.log("Webhook result", resp.body);
+                if (okCallback) {
+                    okCallback();
                 }
             });
     }
-
+    
     /*
      Process message from Spark
      details here https://developer.ciscospark.com/webhooks-explained.html
@@ -147,7 +187,7 @@ module.exports = class SparkBot {
             roomId: roomId
         });
     }
-    
+
     loadMessage(messageId) {
         return ciscospark.messages.get(messageId);
     }
