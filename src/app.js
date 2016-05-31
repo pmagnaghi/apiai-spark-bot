@@ -84,10 +84,12 @@ app.get('/auth', (req, res) => {
 
         if (!err) {
             let accessToken = authResp.body.access_token;
-
             startBot(accessToken);
+            res.status(200).send("OK");
+
         } else {
             console.error("Can't auth:", err);
+            res.status(400).send("Can't auth");
         }
     })
 });
