@@ -4,9 +4,6 @@ const apiai = require('apiai');
 const uuid = require('node-uuid');
 const request = require('request');
 
-import assert from 'assert';
-import ciscospark from 'ciscospark/es6';
-
 module.exports = class SparkBot {
 
     get apiaiService() {
@@ -48,7 +45,37 @@ module.exports = class SparkBot {
     }
 
     start(responseCallback, errCallback) {
-        this.createWebhook(this._webhookUrl);
+        console.log("Trying start bot");
+
+        request.post("https://api.ciscospark.com/v1/webhooks",
+            {
+                auth: {
+                    bearer: this._botConfig.sparkToken
+                },
+                json: {
+                    event: "created",
+                    name: "Test",
+                    resource: "messages",
+                    targetUrl: this._webhookUrl,
+                    filter: 'roomId=Y2lzY29zcGFyazovL3VzL1JPT00vYmJjZWIxYWQtNDNmMS0zYjU4LTkxNDctZjE0YmIwYzRkMTU0'
+                }
+            }, (err, resp, body) => {
+                if (err) {
+                    console.error("Bot start error", err);
+                    errCallback("Bot start error");
+                }
+                else if (resp.statusCode > 200) {
+                    let message = resp.statusMessage;
+                    if (resp.body.message) {
+                        message += ", " + resp.body.message;
+                    }
+                    errCallback(message);
+                }
+                else {
+                    console.log("Start result", resp.body);
+                    responseCallback();
+                }
+            });
     }
 
     /*
@@ -88,7 +115,9 @@ module.exports = class SparkBot {
 
                                 if (SparkBot.isDefined(responseText)) {
                                     console.log('Response as text message');
-                                    this.reply(chatId, responseText);
+                                    this.reply(chatId, responseText).then((answer) => {
+                                        console.log('Reply answer:', answer);
+                                    });
                                     SparkBot.createResponse(res, 200, 'Reply sent');
 
                                 } else {
@@ -118,28 +147,7 @@ module.exports = class SparkBot {
             roomId: roomId
         });
     }
-
-    createWebhook(webhookUrl) {
-        return ciscospark.rooms.create({title: 'Webhook Example'})
-            .then(function (room) {
-                return ciscospark.webhooks.create({
-                    resource: 'messages',
-                    event: 'created',
-                    //filter: 'roomId=' + room.id,
-                    targetUrl: webhookUrl,
-                    name: 'Test Webhook'
-                });
-            })
-            .then(function (webhook) {
-                assert(webhook.id);
-                assert(webhook.resource);
-                assert(webhook.event);
-                assert(webhook.filter);
-                assert(webhook.targetUrl);
-                assert(webhook.name);
-            });
-    }
-
+    
     loadMessage(messageId) {
         return ciscospark.messages.get(messageId);
     }
