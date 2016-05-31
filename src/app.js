@@ -33,6 +33,9 @@ require('console-stamp')(console, 'yyyy.mm.dd HH:MM:ss.l');
 
 
 function startBot(accessToken) {
+
+    console.log("Starting bot");
+
     const botConfig = new SparkBotConfig(
         APIAI_ACCESS_TOKEN,
         APIAI_LANG,
@@ -63,41 +66,52 @@ app.post('/webhook', (req, res) => {
 });
 
 app.get('/auth', (req, res) => {
+    console.log('GET auth');
 
     var code = req.query.code;
 
-    request.post('https://api.ciscospark.com/v1/access_token', {
-        form: {
-            grant_type: 'authorization_code',
-            code: code,
-            client_id: SPARK_CLIENT_ID,
-            client_secret: SPARK_CLIENT_SECRET,
-            redirect_uri: baseUrl + '/success'
-        }
-    }, (err, authResp) => {
-        // {
-        //     "access_token":"ZDI3MGEyYzQtNmFlNS00NDNhLWFlNzAtZGVjNjE0MGU1OGZmZWNmZDEwN2ItYTU3",
-        //     "expires_in":1209600, //seconds
-        //     "refresh_token":"MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTEyMzQ1Njc4",
-        //     "refresh_token_expires_in":7776000 //seconds
-        // }
+    request.post('https://api.ciscospark.com/v1/access_token',
+        {
+            form: {
+                grant_type: 'authorization_code',
+                code: code,
+                client_id: SPARK_CLIENT_ID,
+                client_secret: SPARK_CLIENT_SECRET,
+                redirect_uri: baseUrl + '/success'
+            }
+        }, (err, authResp) => {
+            // {
+            //     "access_token":"ZDI3MGEyYzQtNmFlNS00NDNhLWFlNzAtZGVjNjE0MGU1OGZmZWNmZDEwN2ItYTU3",
+            //     "expires_in":1209600, //seconds
+            //     "refresh_token":"MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTEyMzQ1Njc4",
+            //     "refresh_token_expires_in":7776000 //seconds
+            // }
 
-        if (!err) {
-            let accessToken = authResp.body.access_token;
-            startBot(accessToken);
-            res.status(200).send("OK");
+            console.log(authResp.body);
 
-        } else {
-            console.error("Can't auth:", err);
-            res.status(400).send("Can't auth");
-        }
-    })
+            if (!err) {
+                let accessToken = authResp.body.access_token;
+
+                if (accessToken) {
+                    startBot(accessToken);
+
+                    console.log("Return OK status");
+                    res.status(200).send("OK");
+                } else {
+                    console.log("AccessToken is empty");
+                    res.status(400).send("AccessToken is empty");
+                }
+            } else {
+                console.error("Can't auth:", err);
+                res.status(400).send("Can't auth");
+            }
+        })
 });
 
-app.get('/success', (req,res) => {
-    res.sendFile('html/success.html', { root: __dirname });
+app.get('/success', (req, res) => {
+    res.sendFile('html/success.html', {root: __dirname});
 });
 
-app.listen(REST_PORT, function () {
+app.listen(REST_PORT, () => {
     console.log('Rest service ready on port ' + REST_PORT);
 });
