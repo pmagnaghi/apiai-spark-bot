@@ -62,7 +62,7 @@ app.post('/webhook', (req, res) => {
 });
 
 app.get('/auth', (req, res) => {
-    console.log('GET auth');
+    console.log('GET auth', req.query);
 
     var code = req.query.code;
 
