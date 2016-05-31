@@ -13,7 +13,6 @@
     "apiai": "2.0.5",
     "assert": "^1.4.0",
     "body-parser": "^1.15.0",
-    "ciscospark": "^0.6.3",
     "console-stamp": "^0.2.1",
     "express": "^4.13.4",
     "node-uuid": "^1.4.7",
