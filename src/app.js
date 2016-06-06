@@ -63,10 +63,7 @@ app.get('/auth', (req, res) => {
     console.log('GET auth', req.query);
 
     var code = req.query.code;
-    
-    console.log("Code", code);
-    console.log("ClientId", SPARK_CLIENT_ID);
-    console.log("ClientSecret", SPARK_CLIENT_SECRET);
+
     if (code) {
     request.post('https://api.ciscospark.com/v1/access_token',
         {
