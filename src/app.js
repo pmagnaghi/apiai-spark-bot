@@ -14,12 +14,9 @@ const DEV_CONFIG = process.env.DEVELOPMENT_CONFIG == 'true';
 const APP_NAME = process.env.APP_NAME;
 const APIAI_ACCESS_TOKEN = process.env.APIAI_ACCESS_TOKEN;
 const APIAI_LANG = process.env.APIAI_LANG;
-//const SPARK_TOKEN = process.env.SPARK_TOKEN;
 
 const SPARK_CLIENT_ID = process.env.SPARK_CLIENT_ID;
 const SPARK_CLIENT_SECRET = process.env.SPARK_CLIENT_SECRET;
-
-request.debug = true;
 
 var baseUrl = "";
 if (APP_NAME) {
@@ -32,7 +29,6 @@ if (APP_NAME) {
 
 // console timestamps
 require('console-stamp')(console, 'yyyy.mm.dd HH:MM:ss.l');
-
 
 function startBot(accessToken) {
 
@@ -71,7 +67,7 @@ app.get('/auth', (req, res) => {
     console.log("Code", code);
     console.log("ClientId", SPARK_CLIENT_ID);
     console.log("ClientSecret", SPARK_CLIENT_SECRET);
-
+    if (code) {
     request.post('https://api.ciscospark.com/v1/access_token',
         {
             form: {
@@ -79,7 +75,7 @@ app.get('/auth', (req, res) => {
                 code: code,
                 client_id: SPARK_CLIENT_ID,
                 client_secret: SPARK_CLIENT_SECRET,
-                redirect_uri: baseUrl + '/success'
+                    redirect_uri: baseUrl + '/auth'
             }
         }, (err, authResp) => {
             // {
@@ -92,7 +88,9 @@ app.get('/auth', (req, res) => {
             console.log(authResp.body);
 
             if (!err) {
-                let accessToken = authResp.body.access_token;
+                    let response = JSON.parse(authResp.body);
+
+                    let accessToken = response.access_token;
 
                 if (accessToken) {
                     startBot(accessToken);
@@ -108,6 +106,10 @@ app.get('/auth', (req, res) => {
                 res.status(400).send("Can't auth");
             }
         })
+    } else {
+        res.sendFile('html/success.html', {root: __dirname});
+    }
+    
 });
 
 app.get('/success', (req, res) => {
