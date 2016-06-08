@@ -71,12 +71,17 @@ module.exports = class SparkBot {
                     console.log("Response", resp.body);
                     let roomId = resp.body.id;
 
+                    this.reply(roomId, "This is room for your bot");
+
                     this.setupWebhookForRoom(roomId)
                 }
             });
     }
 
     setupWebhookForRoom(roomId, okCallback, errCallback) {
+
+        // https://developer.ciscospark.com/endpoint-webhooks-post.html
+
         request.post("https://api.ciscospark.com/v1/webhooks",
             {
                 auth: {
@@ -104,20 +109,20 @@ module.exports = class SparkBot {
                         message += ", " + resp.body.message;
                     }
                     console.error("Error while setup webhook", message);
-                    
+
                     if (errCallback) {
                         errCallback(message);
                     }
                     return;
                 }
-                
+
                 console.log("Webhook result", resp.body);
                 if (okCallback) {
                     okCallback();
                 }
             });
     }
-    
+
     /*
      Process message from Spark
      details here https://developer.ciscospark.com/webhooks-explained.html
@@ -177,19 +182,52 @@ module.exports = class SparkBot {
                         apiaiRequest.end();
                     }
                 })
+                .catch((err) =>{ 
+                    console.error("Error while loading message:", err)
+                });
         }
 
     }
 
     reply(roomId, text) {
-        return ciscospark.messages.create({
-            text: text,
-            roomId: roomId
-        });
+        request.post("https://api.ciscospark.com/v1/messages",
+            {
+                auth: {
+                    bearer: this._botConfig.sparkToken
+                },
+                json: {
+                    roomId: roomId,
+                    text: text
+                }
+            }, (err, resp) => {
+                if (err) {
+                    console.error('Error while reply:', err);
+                }
+            });
     }
 
     loadMessage(messageId) {
-        return ciscospark.messages.get(messageId);
+        return new Promise((resolve, reject) => {
+            request.get("https://api.ciscospark.com/v1/messages/" + messageId,
+                {
+                    auth: {
+                        bearer: this._botConfig.sparkToken
+                    }
+                }, (err, resp, body) => {
+                    if (err) {
+                        console.error('Error while reply:', err);
+                        reject(err);
+                    } else {
+                        if (resp.statusCode == 200) {
+                            let result = JSON.parse(body);
+                            resolve(result);
+                        } else {
+                            console.log('LoadMessage error:', resp.statusCode, body);
+                            reject('LoadMessage error: ' + body);
+                        }
+                    }
+                });
+        });
     }
 
     static createResponse(resp, code, message) {
