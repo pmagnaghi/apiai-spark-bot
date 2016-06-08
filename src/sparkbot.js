@@ -160,9 +160,13 @@ module.exports = class SparkBot {
 
                                 if (SparkBot.isDefined(responseText)) {
                                     console.log('Response as text message');
-                                    this.reply(chatId, responseText).then((answer) => {
-                                        console.log('Reply answer:', answer);
-                                    });
+                                    this.reply(chatId, responseText)
+                                        .then((answer) => {
+                                            console.log('Reply answer:', answer);
+                                        })
+                                        .catch((err) => {
+                                            console.error(err);
+                                        });
                                     SparkBot.createResponse(res, 200, 'Reply sent');
 
                                 } else {
@@ -182,7 +186,7 @@ module.exports = class SparkBot {
                         apiaiRequest.end();
                     }
                 })
-                .catch((err) =>{ 
+                .catch((err) => {
                     console.error("Error while loading message:", err)
                 });
         }
@@ -190,20 +194,28 @@ module.exports = class SparkBot {
     }
 
     reply(roomId, text) {
-        request.post("https://api.ciscospark.com/v1/messages",
-            {
-                auth: {
-                    bearer: this._botConfig.sparkToken
-                },
-                json: {
-                    roomId: roomId,
-                    text: text
-                }
-            }, (err, resp) => {
-                if (err) {
-                    console.error('Error while reply:', err);
-                }
-            });
+        return new Promise((resolve, reject) => {
+            request.post("https://api.ciscospark.com/v1/messages",
+                {
+                    auth: {
+                        bearer: this._botConfig.sparkToken
+                    },
+                    json: {
+                        roomId: roomId,
+                        text: text
+                    }
+                }, (err, resp, body) => {
+                    if (err) {
+                        console.error('Error while reply:', err);
+                        reject('Error while reply: ' + err.message);
+                    } else if (resp.statusCode != 200) {
+                        console.log('Error while reply:', resp.statusCode, body);
+                        reject('Error while reply: ' + body);
+                    } else {
+                        resolve(body);
+                    }
+                });
+        });
     }
 
     loadMessage(messageId) {
@@ -217,14 +229,12 @@ module.exports = class SparkBot {
                     if (err) {
                         console.error('Error while reply:', err);
                         reject(err);
+                    } else if (resp.statusCode != 200) {
+                        console.log('LoadMessage error:', resp.statusCode, body);
+                        reject('LoadMessage error: ' + body);
                     } else {
-                        if (resp.statusCode == 200) {
-                            let result = JSON.parse(body);
-                            resolve(result);
-                        } else {
-                            console.log('LoadMessage error:', resp.statusCode, body);
-                            reject('LoadMessage error: ' + body);
-                        }
+                        let result = JSON.parse(body);
+                        resolve(result);
                     }
                 });
         });
