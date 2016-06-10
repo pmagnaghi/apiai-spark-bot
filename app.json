@@ -9,12 +9,16 @@
       "description": "Copy App Name here",
       "value": ""
     },
-    "SPARK_TOKEN": {
-      "description": "Spark bot token",
-      "value": ""
-    },
     "APIAI_ACCESS_TOKEN": {
       "description": "Client access token for Api.ai",
+      "value": ""
+    },
+    "SPARK_CLIENT_ID": {
+      "description": "Spark Client Id",
+      "value": ""
+    },
+    "SPARK_CLIENT_SECRET": {
+      "description": "Spark Client Secret",
       "value": ""
     },
     "APIAI_LANG": {

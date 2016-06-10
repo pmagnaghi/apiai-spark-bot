@@ -19,14 +19,14 @@ const APIAI_LANG = process.env.APIAI_LANG;
 const SPARK_CLIENT_ID = process.env.SPARK_CLIENT_ID;
 const SPARK_CLIENT_SECRET = process.env.SPARK_CLIENT_SECRET;
 
-var baseUrl = "https://c1cb1fca.ngrok.io";
-// if (APP_NAME) {
-//     // Heroku case
-//     baseUrl = `https://${APP_NAME}.herokuapp.com`;
-// } else {
-//     console.error('Set up the url of your service here and remove exit code!');
-//     process.exit(1);
-// }
+var baseUrl = "";
+if (APP_NAME) {
+    // Heroku case
+    baseUrl = `https://${APP_NAME}.herokuapp.com`;
+} else {
+    console.error('Set up the url of your service here and remove exit code!');
+    process.exit(1);
+}
 
 var bot;
 
@@ -36,14 +36,14 @@ require('console-stamp')(console, 'yyyy.mm.dd HH:MM:ss.l');
 nconf.use('file', {file: './config.json'});
 nconf.load();
 
-function startBot(accessToken) {
+function startBot(sparkToken) {
 
     console.log("Starting bot");
 
     const botConfig = new SparkBotConfig(
         APIAI_ACCESS_TOKEN,
         APIAI_LANG,
-        accessToken);
+        sparkToken);
 
     botConfig.devConfig = DEV_CONFIG;
 
