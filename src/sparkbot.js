@@ -44,7 +44,7 @@ module.exports = class SparkBot {
         console.log('Starting bot on ' + this._webhookUrl);
     }
 
-    createRoom(roomName) {
+    createRoom(roomName, personToInvite) {
         console.log("Trying to create room");
 
         request.post("https://api.ciscospark.com/v1/rooms",
@@ -71,11 +71,32 @@ module.exports = class SparkBot {
                     console.log("Response", resp.body);
                     let roomId = resp.body.id;
 
-                    this.reply(roomId, "This is room for your bot");
+                    this.invite(roomId, personToInvite);
+                    
+                    this.reply(roomId, "This is room for your bot")
+                        .then((answer) => {
+                            console.log('Reply answer:', answer);
+                        })
+                        .catch((err) => {
+                            console.error(err);
+                        });
 
                     this.setupWebhookForRoom(roomId)
                 }
             });
+    }
+
+    invite(roomId, person) {
+        request.post("https://api.ciscospark.com/v1/memberships",
+            {
+                auth: {
+                    bearer: this._botConfig.sparkToken
+                },
+                json: {
+                    roomId: roomId,
+                    personEmail: person
+                }
+            }, (err, resp) => {});
     }
 
     setupWebhookForRoom(roomId, okCallback, errCallback) {
@@ -136,6 +157,12 @@ module.exports = class SparkBot {
         if (updateObject.resource == "messages" &&
             updateObject.data &&
             updateObject.data.id) {
+
+            if (updateObject.data.personEmail && updateObject.data.personEmail.endsWith("@sparkbot.io"))
+            {
+                console.log("Message from bot. Skipping.");
+                return;
+            }
 
             this.loadMessage(updateObject.data.id)
                 .then((msg)=> {
