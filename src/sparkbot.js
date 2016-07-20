@@ -30,7 +30,7 @@ module.exports = class SparkBot {
         this._sessionIds = value;
     }
 
-    constructor(botConfig, baseUrl) {
+    constructor(botConfig, webhookUrl) {
         this._botConfig = botConfig;
         var apiaiOptions = {
             language: botConfig.apiaiLang,
@@ -40,8 +40,16 @@ module.exports = class SparkBot {
         this._apiaiService = apiai(botConfig.apiaiAccessToken, apiaiOptions);
         this._sessionIds = new Map();
 
-        this._webhookUrl = baseUrl + '/webhook';
+        this._webhookUrl = webhookUrl;
         console.log('Starting bot on ' + this._webhookUrl);
+
+        this.loadProfile()
+            .then((profile) => {
+                if (profile.displayName) {
+                    this._botName = profile.displayName.replace("(bot)", "").trim();
+                    console.log("BotName:", this._botName);
+                }
+            });
     }
 
     createRoom(roomName, personToInvite) {
@@ -63,7 +71,7 @@ module.exports = class SparkBot {
 
                 if (resp.statusCode > 200) {
                     let message = resp.statusMessage;
-                    if (resp.body.message) {
+                    if (resp.body && resp.body.message) {
                         message += ", " + resp.body.message;
                     }
                     console.error("Error response from rooms API:", message);
@@ -72,14 +80,7 @@ module.exports = class SparkBot {
                     let roomId = resp.body.id;
 
                     this.invite(roomId, personToInvite);
-                    
-                    this.reply(roomId, "This is room for your bot")
-                        .then((answer) => {
-                            console.log('Reply answer:', answer);
-                        })
-                        .catch((err) => {
-                            console.error(err);
-                        });
+                    this.reply(roomId, "This is room for your bot");
 
                     this.setupWebhookForRoom(roomId)
                 }
@@ -87,6 +88,8 @@ module.exports = class SparkBot {
     }
 
     invite(roomId, person) {
+        // https://developer.ciscospark.com/endpoint-memberships-post.html
+
         request.post("https://api.ciscospark.com/v1/memberships",
             {
                 auth: {
@@ -96,7 +99,15 @@ module.exports = class SparkBot {
                     roomId: roomId,
                     personEmail: person
                 }
-            }, (err, resp) => {});
+            }, (err, resp, body) => {
+                if (err) {
+                    console.error('Error while reply:', err);
+                } else if (resp.statusCode != 200) {
+                    console.log('Error while reply:', resp.statusCode, body);
+                } else {
+                    console.log('Invite response: ', body);
+                }
+            });
     }
 
     setupWebhookForRoom(roomId, okCallback, errCallback) {
@@ -144,7 +155,34 @@ module.exports = class SparkBot {
             });
     }
 
-    /*
+    loadProfile() {
+        return new Promise((resolve, reject) => {
+            request.get("https://api.ciscospark.com/v1/people/me",
+                {
+                    auth: {
+                        bearer: this._botConfig.sparkToken
+                    }
+                }, (err, resp, body) => {
+                    if (err) {
+                        console.error('Error while reply:', err);
+                        reject(err);
+                    } else if (resp.statusCode != 200) {
+                        console.log('LoadMessage error:', resp.statusCode, body);
+                        reject('LoadMessage error: ' + body);
+                    } else {
+
+                        if (this._botConfig.devConfig) {
+                            console.log("profile", body);
+                        }
+
+                        let result = JSON.parse(body);
+                        resolve(result);
+                    }
+                });
+        });
+    }
+
+    /**
      Process message from Spark
      details here https://developer.ciscospark.com/webhooks-explained.html
      */
@@ -171,6 +209,11 @@ module.exports = class SparkBot {
 
                     if (messageText && chatId) {
                         console.log(chatId, messageText);
+
+                        // to remove bot name from message
+                        if (this._botName) {
+                            messageText = messageText.replace(this._botName, '');
+                        }
 
                         if (!this._sessionIds.has(chatId)) {
                             this._sessionIds.set(chatId, uuid.v1());
@@ -239,6 +282,7 @@ module.exports = class SparkBot {
                         console.log('Error while reply:', resp.statusCode, body);
                         reject('Error while reply: ' + body);
                     } else {
+                        console.log("reply answer body", body);
                         resolve(body);
                     }
                 });
@@ -260,6 +304,7 @@ module.exports = class SparkBot {
                         console.log('LoadMessage error:', resp.statusCode, body);
                         reject('LoadMessage error: ' + body);
                     } else {
+                        console.log("message body", body);
                         let result = JSON.parse(body);
                         resolve(result);
                     }
