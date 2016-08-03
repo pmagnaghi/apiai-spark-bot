@@ -17,14 +17,6 @@
       "description": "Spark Access Token",
       "value": ""
     },
-    "PERSON_TO_INVITE": {
-      "description": "Person to invite to created room",
-      "value": ""
-    },
-    "ROOM_NAME": {
-      "description": "Room to chat with bot",
-      "value": "BotRoom"
-    },
     "APIAI_LANG": {
       "description": "Agent language",
       "value": "en",

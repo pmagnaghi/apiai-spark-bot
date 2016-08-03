@@ -16,8 +16,6 @@ const APIAI_ACCESS_TOKEN = process.env.APIAI_ACCESS_TOKEN;
 const APIAI_LANG = process.env.APIAI_LANG;
 
 const SPARK_ACCESS_TOKEN = process.env.SPARK_ACCESS_TOKEN;
-const ROOM_NAME = process.env.ROOM_NAME;
-const PERSON_TO_INVITE = process.env.PERSON_TO_INVITE;
 
 var baseUrl = "";
 if (APP_NAME) {
@@ -45,7 +43,7 @@ function startBot() {
     botConfig.devConfig = DEV_CONFIG;
 
     bot = new SparkBot(botConfig, baseUrl + '/webhook');
-    bot.createRoom(ROOM_NAME, PERSON_TO_INVITE);
+    bot.setupWebhook();
 }
 
 startBot();

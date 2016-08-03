@@ -52,66 +52,7 @@ module.exports = class SparkBot {
             });
     }
 
-    createRoom(roomName, personToInvite) {
-        console.log("Trying to create room");
-
-        request.post("https://api.ciscospark.com/v1/rooms",
-            {
-                auth: {
-                    bearer: this._botConfig.sparkToken
-                },
-                json: {
-                    title: roomName
-                }
-            }, (err, resp) => {
-                if (err) {
-                    console.error("Error while creating room", err);
-                    return;
-                }
-
-                if (resp.statusCode > 200) {
-                    let message = resp.statusMessage;
-                    if (resp.body && resp.body.message) {
-                        message += ", " + resp.body.message;
-                    }
-                    console.error("Error response from rooms API:", message);
-                } else {
-                    console.log("Response", resp.body);
-                    let roomId = resp.body.id;
-
-                    this.invite(roomId, personToInvite);
-                    this.reply(roomId, "This is room for your bot");
-
-                    this.setupWebhookForRoom(roomId)
-                }
-            });
-    }
-
-    invite(roomId, person) {
-        // https://developer.ciscospark.com/endpoint-memberships-post.html
-
-        request.post("https://api.ciscospark.com/v1/memberships",
-            {
-                auth: {
-                    bearer: this._botConfig.sparkToken
-                },
-                json: {
-                    roomId: roomId,
-                    personEmail: person
-                }
-            }, (err, resp, body) => {
-                if (err) {
-                    console.error('Error while reply:', err);
-                } else if (resp.statusCode != 200) {
-                    console.log('Error while reply:', resp.statusCode, body);
-                } else {
-                    console.log('Invite response: ', body);
-                }
-            });
-    }
-
-    setupWebhookForRoom(roomId, okCallback, errCallback) {
-
+    setupWebhook() {
         // https://developer.ciscospark.com/endpoint-webhooks-post.html
 
         request.post("https://api.ciscospark.com/v1/webhooks",
@@ -121,37 +62,26 @@ module.exports = class SparkBot {
                 },
                 json: {
                     event: "created",
-                    name: "Test",
+                    name: "BotWebhook",
                     resource: "messages",
-                    targetUrl: this._webhookUrl,
-                    filter: 'roomId=' + roomId
+                    targetUrl: this._webhookUrl
                 }
-            }, (err, resp, body) => {
+            }, (err, resp) => {
                 if (err) {
                     console.error("Error while setup webhook", err);
-                    if (errCallback) {
-                        errCallback("Error while setup webhook");
-                    }
                     return;
                 }
 
                 if (resp.statusCode > 200) {
                     let message = resp.statusMessage;
-                    if (resp.body.message) {
+                    if (resp.body && resp.body.message) {
                         message += ", " + resp.body.message;
                     }
                     console.error("Error while setup webhook", message);
-
-                    if (errCallback) {
-                        errCallback(message);
-                    }
                     return;
                 }
 
                 console.log("Webhook result", resp.body);
-                if (okCallback) {
-                    okCallback();
-                }
             });
     }
 
