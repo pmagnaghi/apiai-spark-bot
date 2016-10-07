@@ -47,7 +47,14 @@ module.exports = class SparkBot {
             .then((profile) => {
                 if (profile.displayName) {
                     this._botName = profile.displayName.replace("(bot)", "").trim();
+                    if (this._botName.includes(" ")) {
+                        this._shortName = this._botName.substr(0, this._botName.indexOf(" "));
+                    } else {
+                        this._shortName = null;
+                    }
+
                     console.log("BotName:", this._botName);
+                    console.log("ShortName:", this._shortName);
                 }
             });
     }
@@ -143,6 +150,10 @@ module.exports = class SparkBot {
                         // to remove bot name from message
                         if (this._botName) {
                             messageText = messageText.replace(this._botName, '');
+                        }
+
+                        if (this._shortName) {
+                            messageText = messageText.replace(this._shortName, '');
                         }
 
                         if (!this._sessionIds.has(chatId)) {
