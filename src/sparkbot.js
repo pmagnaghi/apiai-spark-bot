@@ -89,7 +89,41 @@ module.exports = class SparkBot {
                 }
 
                 console.log("Webhook result", resp.body);
+                this._botConfig.webhookId = resp.body.id;
             });
+    }
+
+    deleteWebhook() {
+        if (this._botConfig.webhookId) {
+            return new Promise((resolve, reject) => {
+                request.del("https://api.ciscospark.com/v1/webhooks/" + this._botConfig.webhookId,
+                    {
+                        auth: {
+                            bearer: this._botConfig.sparkToken
+                        }
+                    },
+                    (err, resp) => {
+                        if (err) {
+                            console.error("Error while setup webhook", err);
+                            reject(err);
+                        } else if (resp.statusCode > 204) {
+                            let message = resp.statusMessage;
+                            if (resp.body && resp.body.message) {
+                                message += ", " + resp.body.message;
+                            }
+                            console.error("Error while setup webhook", message);
+                            reject(new Error(message));
+                        } else {
+                            console.log("deleteWebhook result", resp.body);
+                            resolve();
+                        }
+                    });
+            });
+
+        } else {
+            return Promise.resolve();
+        }
+
     }
 
     loadProfile() {
