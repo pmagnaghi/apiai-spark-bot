@@ -16,7 +16,7 @@
     "body-parser": "^1.15.0",
     "console-stamp": "^0.2.1",
     "express": "^4.13.4",
-    "node-uuid": "^1.4.7",
-    "request": "^2.71.0"
+    "request": "^2.71.0",
+    "uuid": "^3.0.1"
   }
 }
