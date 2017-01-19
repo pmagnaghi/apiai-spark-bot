@@ -200,10 +200,10 @@ module.exports = class SparkBot {
                             });
 
                         apiaiRequest.on('response', (response) => {
-                            if (SparkBot.isDefined(response.result)) {
+                            if (this.isDefined(response.result)) {
                                 let responseText = response.result.fulfillment.speech;
 
-                                if (SparkBot.isDefined(responseText)) {
+                                if (this.isDefined(responseText)) {
                                     console.log('Response as text message');
                                     this.reply(chatId, responseText)
                                         .then((answer) => {
@@ -307,7 +307,7 @@ module.exports = class SparkBot {
         });
     }
 
-    static isDefined(obj) {
+    isDefined(obj) {
         if (typeof obj == 'undefined') {
             return false;
         }
@@ -318,4 +318,4 @@ module.exports = class SparkBot {
 
         return obj != null;
     }
-}
+};
