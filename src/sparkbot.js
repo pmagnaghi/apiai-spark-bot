@@ -3,6 +3,7 @@
 const apiai = require('apiai');
 const uuid = require('node-uuid');
 const request = require('request');
+const async = require('async');
 
 module.exports = class SparkBot {
 
@@ -202,8 +203,19 @@ module.exports = class SparkBot {
                         apiaiRequest.on('response', (response) => {
                             if (this.isDefined(response.result)) {
                                 let responseText = response.result.fulfillment.speech;
+                                let responseMessages = response.result.fulfillment.messages;
 
-                                if (this.isDefined(responseText)) {
+                                if (this.isDefined(responseMessages) && responseMessages.length > 0) {
+                                    this.replyWithRichContent(chatId, responseMessages)
+                                        .then(() => {
+                                            console.log('Reply sent');
+                                        })
+                                        .catch((err) => {
+                                            console.error(err);
+                                        });
+                                    this.createResponse(res, 200, 'Reply sent');
+
+                                } else if (this.isDefined(responseText)) {
                                     console.log('Response as text message');
                                     this.reply(chatId, responseText)
                                         .then((answer) => {
@@ -212,21 +224,21 @@ module.exports = class SparkBot {
                                         .catch((err) => {
                                             console.error(err);
                                         });
-                                    SparkBot.createResponse(res, 200, 'Reply sent');
+                                    this.createResponse(res, 200, 'Reply sent');
 
                                 } else {
                                     console.log('Received empty speech');
-                                    SparkBot.createResponse(res, 200, 'Received empty speech');
+                                    this.createResponse(res, 200, 'Received empty speech');
                                 }
                             } else {
                                 console.log('Received empty result');
-                                SparkBot.createResponse(res, 200, 'Received empty result');
+                                this.createResponse(res, 200, 'Received empty result');
                             }
                         });
 
                         apiaiRequest.on('error', (error) => {
                             console.error('Error while call to api.ai', error);
-                            SparkBot.createResponse(res, 200, 'Error while call to api.ai');
+                            this.createResponse(res, 200, 'Error while call to api.ai');
                         });
                         apiaiRequest.end();
                     }
@@ -275,6 +287,163 @@ module.exports = class SparkBot {
         });
     }
 
+    replyWithRichContent(roomId, messages){
+        let sparkMessages = [];
+
+        for (let messageIndex = 0; messageIndex < messages.length; messageIndex++) {
+            let message = messages[messageIndex];
+
+            switch (message.type) {
+                case 0:
+                    // speech: ["hi"]
+                    // we have to get value from fulfillment.speech, because of here is raw speech
+                    if (message.speech) {
+                        sparkMessages.push({text: message.speech});
+                    }
+
+                    break;
+
+                case 1: {
+
+                    let msg = {};
+
+                    let textMessage = "";
+                    let markdownMessage = "";
+
+                    if (message.title) {
+                        textMessage += message.title;
+                        markdownMessage += `**${message.title}**`;
+                    }
+
+                    if (message.subtitle) {
+                        textMessage += "\n";
+                        textMessage += message.subtitle;
+
+                        markdownMessage += "<br>";
+                        markdownMessage += message.subtitle;
+                    }
+
+                    if (message.imageUrl) {
+                        msg.files = [ message.imageUrl ];
+                    }
+
+                    if (message.buttons.length > 0) {
+
+                        for (let buttonIndex = 0; buttonIndex < message.buttons.length; buttonIndex++) {
+                            let button = message.buttons[buttonIndex];
+                            let text = button.text;
+                            let postback = button.postback;
+
+                            if (text) {
+
+                                if (!postback) {
+                                    postback = text;
+                                }
+
+                                if (postback.startsWith('http')) {
+                                    textMessage += "\n" + text;
+                                    markdownMessage += "\n" + ` - [${text}](${postback})`;
+                                } else {
+                                    textMessage += "\n" + ` - ${text}`;
+                                    markdownMessage += "\n" + ` - ${text}`;
+                                }
+                            }
+                        }
+                    }
+
+                    msg.text = textMessage;
+                    msg.markdown = markdownMessage;
+
+                    sparkMessages.push(msg);
+                }
+
+                    break;
+
+                case 2: {
+                    if (message.replies && message.replies.length > 0) {
+                        let msg = {};
+
+                        msg.text = message.title ? message.title : 'Choose an item';
+                        msg.markdown = message.title ? "**" + message.title + "**" : '**Choose an item:**';
+
+                        message.replies.forEach((r) => {
+                            msg.text += "\n - " + r;
+                            msg.markdown += "\n - " + r;
+                        });
+
+                        sparkMessages.push(msg);
+                    }
+                }
+
+                    break;
+
+                case 3:
+
+                    if (message.imageUrl) {
+                        let msg = {};
+
+                        // "imageUrl": "http://example.com/image.jpg"
+                        msg.files = [ message.imageUrl ];
+                        sparkMessages.push(msg);
+                    }
+
+                    break;
+
+                case 4:
+                    if (message.payload && message.payload.spark) {
+                        sparkMessages.push(message.payload.spark);
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        return new Promise((resolve, reject) => {
+            async.eachSeries(sparkMessages, (msg, callback) => {
+                    this.replyWithData(roomId, msg)
+                        .then(() => setTimeout(()=>callback(), 300))
+                        .catch(callback);
+                },
+                (err)=> {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+        });
+    }
+
+    replyWithData(roomId, messageData) {
+
+        let msg = messageData;
+        msg.roomId = roomId;
+
+        return new Promise((resolve, reject) => {
+            request.post("https://api.ciscospark.com/v1/messages",
+                {
+                    auth: {
+                        bearer: this._botConfig.sparkToken
+                    },
+                    forever: true,
+                    json: msg
+                }, (err, resp, body) => {
+                    if (err) {
+                        console.error('Error while reply:', err);
+                        reject('Error while reply: ' + err.message);
+                    } else if (resp.statusCode != 200) {
+                        console.log('Error while reply:', resp.statusCode, body);
+                        reject('Error while reply: ' + body);
+                    } else {
+                        console.log("reply answer body", body);
+                        resolve(body);
+                    }
+                });
+        });
+    }
+
     loadMessage(messageId) {
         return new Promise((resolve, reject) => {
             request.get("https://api.ciscospark.com/v1/messages/" + messageId,
@@ -298,7 +467,7 @@ module.exports = class SparkBot {
         });
     }
 
-    static createResponse(resp, code, message) {
+    createResponse(resp, code, message) {
         return resp.status(code).json({
             status: {
                 code: code,

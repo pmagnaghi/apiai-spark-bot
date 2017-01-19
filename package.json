@@ -10,8 +10,9 @@
   "author": "Danil Skachkov <danil@api.ai> (https://api.ai)",
   "license": "Apache-2.0",
   "dependencies": {
-    "apiai": "2.0.5",
+    "apiai": "^3.0.3",
     "assert": "^1.4.0",
+    "async": "^2.1.4",
     "body-parser": "^1.15.0",
     "console-stamp": "^0.2.1",
     "express": "^4.13.4",
