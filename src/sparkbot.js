@@ -238,17 +238,28 @@ module.exports = class SparkBot {
 
     }
 
-    reply(roomId, text) {
+    reply(roomId, text, markdown) {
+
+        let msg = {
+            roomId: roomId
+        };
+
+        if (text) {
+            msg.text = text;
+        }
+
+        if (markdown) {
+            msg.markdown = markdown;
+        }
+
         return new Promise((resolve, reject) => {
             request.post("https://api.ciscospark.com/v1/messages",
                 {
                     auth: {
                         bearer: this._botConfig.sparkToken
                     },
-                    json: {
-                        roomId: roomId,
-                        text: text
-                    }
+                    forever: true,
+                    json: msg
                 }, (err, resp, body) => {
                     if (err) {
                         console.error('Error while reply:', err);
