@@ -17,7 +17,7 @@ const APIAI_LANG = process.env.APIAI_LANG;
 
 const SPARK_ACCESS_TOKEN = process.env.SPARK_ACCESS_TOKEN;
 
-var baseUrl = "";
+let baseUrl = "";
 if (APP_NAME) {
     // Heroku case
     baseUrl = `https://${APP_NAME}.herokuapp.com`;
@@ -26,7 +26,7 @@ if (APP_NAME) {
     process.exit(1);
 }
 
-var bot;
+let bot;
 
 // console timestamps
 require('console-stamp')(console, 'yyyy.mm.dd HH:MM:ss.l');
@@ -43,7 +43,15 @@ function startBot() {
     botConfig.devConfig = DEV_CONFIG;
 
     bot = new SparkBot(botConfig, baseUrl + '/webhook');
-    bot.setupWebhook();
+
+    bot.loadProfile()
+        .then((profile) => {
+            bot.setProfile(profile);
+            bot.setupWebhook();
+        })
+        .catch((err) => {
+            console.error(err);
+        });
 }
 
 startBot();

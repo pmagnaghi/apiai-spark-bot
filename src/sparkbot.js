@@ -33,7 +33,7 @@ module.exports = class SparkBot {
 
     constructor(botConfig, webhookUrl) {
         this._botConfig = botConfig;
-        var apiaiOptions = {
+        let apiaiOptions = {
             language: botConfig.apiaiLang,
             requestSource: "spark"
         };
@@ -43,21 +43,6 @@ module.exports = class SparkBot {
 
         this._webhookUrl = webhookUrl;
         console.log('Starting bot on ' + this._webhookUrl);
-
-        this.loadProfile()
-            .then((profile) => {
-                if (profile.displayName) {
-                    this._botName = profile.displayName.replace("(bot)", "").trim();
-                    if (this._botName.includes(" ")) {
-                        this._shortName = this._botName.substr(0, this._botName.indexOf(" "));
-                    } else {
-                        this._shortName = null;
-                    }
-
-                    console.log("BotName:", this._botName);
-                    console.log("ShortName:", this._shortName);
-                }
-            });
     }
 
     setupWebhook() {
@@ -140,7 +125,15 @@ module.exports = class SparkBot {
                         reject(err);
                     } else if (resp.statusCode != 200) {
                         console.log('LoadMessage error:', resp.statusCode, body);
-                        reject('LoadMessage error: ' + body);
+                        if (resp.statusCode == 401) {
+                            reject(new Error('Spark Access Token is invalid'));
+                        } else {
+                            let errorMessage = `Spark error code: ${resp.statusCode}`;
+                            if (body.message) {
+                                errorMessage += `, message: ${body.message}`;
+                            }
+                            reject(new Error(errorMessage));
+                        }
                     } else {
 
                         if (this._botConfig.devConfig) {
@@ -152,6 +145,54 @@ module.exports = class SparkBot {
                     }
                 });
         });
+    }
+
+    setProfile(profile) {
+        if (profile.displayName) {
+            this._botName = profile.displayName.replace("(bot)", "").trim();
+
+            if (this._botName.includes(" ")) {
+                this._shortName = this._botName.substr(0, this._botName.indexOf(" "));
+            } else {
+                this._shortName = "";
+            }
+
+            console.log("BotName:", this._botName);
+            console.log("ShortName:", this._shortName);
+        }
+
+        if (profile.emails) {
+            if (Array.isArray(profile.emails)) {
+                this._emails = profile.emails;
+            } else if (String.isString(profile.emails)) {
+                this._emails = [profile.emails];
+            }
+        }
+
+        this._botId = profile.id;
+    }
+
+    /**
+     * Checks if the message is coming from bot
+     * @param updateObject
+     * @return {boolean} true if message received from bot
+     */
+    isBotMessage(updateObject) {
+        if (updateObject.data.personEmail) {
+            if (updateObject.data.personEmail.endsWith("@sparkbot.io")) {
+                return true;
+            }
+
+            if (this._emails.indexOf(updateObject.data.personEmail) > -1) {
+                return true;
+            }
+        }
+
+        if (updateObject.data.personId == this._botId) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -168,7 +209,7 @@ module.exports = class SparkBot {
             updateObject.data &&
             updateObject.data.id) {
 
-            if (updateObject.data.personEmail && updateObject.data.personEmail.endsWith("@sparkbot.io"))
+            if (this.isBotMessage(updateObject))
             {
                 console.log("Message from bot. Skipping.");
                 return;
