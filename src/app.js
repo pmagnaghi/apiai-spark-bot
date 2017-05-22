@@ -47,7 +47,6 @@ function startBot() {
     bot.loadProfile()
         .then((profile) => {
             bot.setProfile(profile);
-            bot.setupWebhook();
         })
         .catch((err) => {
             console.error(err);
