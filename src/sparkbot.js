@@ -57,7 +57,8 @@ module.exports = class SparkBot {
                     event: "created",
                     name: "BotWebhook",
                     resource: "messages",
-                    targetUrl: this._webhookUrl
+                    targetUrl: this._webhookUrl,
+                    secret: "EwTPp8yhkd%ka7Xd6"
                 }
             }, (err, resp) => {
                 if (err) {
