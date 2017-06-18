@@ -58,6 +58,7 @@ module.exports = class SparkBot {
                     name: "BotWebhook",
                     resource: "messages",
                     targetUrl: this._webhookUrl,
+                    filter: mentionedPeople=Y2lzY29zcGFyazovL3VzL1BFT1BMRS81MDQxZTVmOC01ZTM3LTQ4ZDItOWZlYy0wODU2ZTlmNjgxN2E,
                     secret: "EwTPp8yhkd%ka7Xd6"
                 }
             }, (err, resp) => {
