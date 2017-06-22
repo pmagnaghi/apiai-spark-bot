@@ -213,6 +213,7 @@ module.exports = class SparkBot {
             if (this.isBotMessage(updateObject))
             {
                 console.log("Message from bot. Skipping.");
+                this.createResponse(res, 200, 'Reply sent');
                 return;
             }
 
